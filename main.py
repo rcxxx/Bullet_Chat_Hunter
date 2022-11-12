@@ -17,12 +17,24 @@ g_wooden_fish_num = 0
 ser = serial.Serial(port='/dev/ttyUSB0',
                     baudrate=115200,
                     timeout=0.5)
+key = '积功德'
 
-def writeSer():
-    global g_wooden_fish_num
-    print(g_wooden_fish_num)
-    ser.write(str(g_wooden_fish_num).encode('utf-8'))
-    g_wooden_fish_num = (g_wooden_fish_num+1)%4
+key_zy = '只因功德'
+
+key_list = ['0001','0010','0011','0100',
+            '0101','0110','0111','1000',
+            '1001','1010','1011','1100',
+            '1101','1110','1111']
+
+def writeSer(_w_data = '', _single=True):
+    if _single:
+        global g_wooden_fish_num
+        print(g_wooden_fish_num)
+        ser.write(str(g_wooden_fish_num).encode('utf-8'))
+        g_wooden_fish_num = (g_wooden_fish_num+1)%4
+    else:
+        print(_w_data)
+        ser.write(str(_w_data).encode('utf-8'))
 
 async def startUp(_room_id):
     data_raw = '000000{Header}0010000100000007000000017b22726f6f6d6964223a{ID}7d'
@@ -71,8 +83,22 @@ def parseData(_data):
             jd = json.loads(_data[16:].decode('utf-8', errors='ignore'))
             if (jd['cmd'] == 'DANMU_MSG'):
                 print('[DANMU] ', jd['info'][2][1], ': ', jd['info'][1])
+                if jd['info'][1] == '功德+1':
+                    print(jd['info'][2][1], ': 功德+1')
+                    # writeSer()
+                elif key in jd['info'][1]:
+                    state = str(jd['info'][1]).replace(key, '')
+                    if state in key_list:
+                        print(state)
+                        print(jd['info'][2][1], ': 功德+n')
+                        writeSer(_w_data=str(state), _single=False)
+                elif key_zy in jd['info'][1]:
+                    state = str(jd['info'][1]).replace(key, '')
+                    if state in key_list:
+                        print(state)
+                        print('小只因子 —— ', jd['info'][2][1], ': 功德+n')
+                        writeSer(_w_data=str(state), _single=False)
 
-                writeSer()
         except Exception as e:
             pass
 
